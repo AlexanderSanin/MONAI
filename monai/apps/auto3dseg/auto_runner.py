@@ -307,9 +307,10 @@ class AutoRunner:
                 pass
 
         # inspect and update folds
-        self.max_fold = self.inspect_datalist_folds(datalist_filename=datalist_filename)
-        if "num_fold" in self.data_src_cfg:
-            num_fold = int(self.data_src_cfg["num_fold"])  # override from config
+        user_num_fold = int(self.data_src_cfg["num_fold"]) if "num_fold" in self.data_src_cfg else None
+        self.max_fold = self.inspect_datalist_folds(datalist_filename=datalist_filename, num_fold=user_num_fold)
+        if user_num_fold is not None:
+            num_fold = user_num_fold
             logger.info(f"Setting num_fold {num_fold} based on the input config.")
         else:
             num_fold = self.max_fold
@@ -391,15 +392,17 @@ class AutoRunner:
             self.cache, self.cache_filename, fmt="yaml", default_flow_style=None, sort_keys=False
         )
 
-    def inspect_datalist_folds(self, datalist_filename: str) -> int:
+    def inspect_datalist_folds(self, datalist_filename: str, num_fold: int | None = None) -> int:
         """
         Returns number of folds in the datalist file, and assigns fold numbers if not provided.
 
         Args:
             datalist_filename: path to the datalist file.
+            num_fold: number of folds to generate when folds are not specified in the datalist.
+                If ``None``, defaults to 5.
 
         Notes:
-            If the fold key is not provided, it auto generates 5 folds assignments in the training key list.
+            If the fold key is not provided, it auto generates fold assignments in the training key list.
             If validation key list is available, then it assumes a single fold validation.
         """
 
@@ -440,7 +443,7 @@ class AutoRunner:
             num_fold = 1
 
         else:
-            num_fold = 5
+            num_fold = num_fold if num_fold is not None else 5
 
             warnings.warn(
                 f"Datalist has no folds specified {datalist_filename}..."
